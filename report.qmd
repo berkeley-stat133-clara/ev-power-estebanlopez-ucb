@@ -1,6 +1,6 @@
 ---
 title: "EV Power - Lab 4 Project Report"
-format: typst
+format: pdf
 ---
 
 # Example Solution 1
@@ -8,27 +8,43 @@ format: typst
 ## **Part 0: libraries**
 
 ```{r}
-
-```
+library(tidyverse)
+library(sf)
+library(janitor)
+library(patchwork)
+library(tigris)```
 
 ## **Part 1:** **Defining Research Question**
 
-Chosen Question:
-
+Chosen Question: Do states with higher renewable electricity shares also have higher EV adoption and how does price relate?
 ## **Part 2: Data Preparation and Cleaning**
 
 ```{r}
+renew_files <- list.files("data", pattern = "renew-use-.*\\.csv$", full.names = TRUE)
+total_files <- list.files("data", pattern = "total-use-.*\\.csv$", full.names = TRUE)
 
-```
+price <- read_csv("data/av-energy-price-2021-2023.csv")
+ev    <- read_csv("data/ev-registrations-by-state-2023.csv")
+
+renew <- map_dfr(renew_files, read_csv, .id = "file") |>
+  mutate(year = str_extract(file, "202\\d"))
+
+total <- map_dfr(total_files, read_csv, .id = "file") |>
+  mutate(year = str_extract(file, "202\\d"))```
 
 ## **Part 3: Joining / Pivoting Datasets for Analysis**
 
 ```{r}
-
-```
+energy <- left_join(
+  renew |> select(1, 2, year),
+  total |> select(1, 2, year),
+  by = c("file" = "file", "year" = "year"),
+  suffix = c("_renew", "_total")) |>
+  mutate(pct_renew = 100 * as.numeric(State) / as.numeric(Energy_Source))```
 
 ## **Part 4: Mapping Visualization**
 
 ```{r}
-
-```
+ggplot(energy, aes(x = year, y = pct_renew)) +
+  geom_col(fill = "steelblue") +
+  labs(title = "Renewable Share by Year", x = "Year", y = "Renewable (%)")```
